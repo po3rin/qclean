@@ -17,6 +17,7 @@ type Cleaner struct {
 	replaceList map[string]string
 }
 
+// NewCleaner ユーザー辞書を使わずに初期化する
 func NewCleaner() (*Cleaner, error) {
 	tknz, err := tokenizer.New(ipa.Dict(), tokenizer.OmitBosEos())
 	if err != nil {
@@ -67,6 +68,13 @@ func (c *Cleaner) Norm(txt string) string {
 	return txt
 }
 
+func (c *Cleaner) ApplyReplae(txt string) string {
+	for k, v := range c.replaceList {
+		txt = strings.ReplaceAll(txt, k, v)
+	}
+	return txt
+}
+
 func (c *Cleaner) Clean(txt string) (string, error) {
 	rawSplit := strings.Split(txt, " ")
 	if len(rawSplit) == 0 {
@@ -76,10 +84,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	txt = strings.ReplaceAll(txt, " ", "")
 	txt = strings.ReplaceAll(txt, "　", "")
 
-	for k, v := range c.replaceList {
-		txt = strings.ReplaceAll(txt, k, v)
-	}
-
+	txt = c.ApplyReplae(txt)
 	txt = c.Norm(txt)
 
 	tokens := c.tknz.Tokenize(txt)
@@ -87,7 +92,6 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	var prefix_pool string
 	var next_join bool
 	var results []string
-
 	for _, t := range tokens {
 		var pos string
 		if len(t.Features()) >= 6 {
@@ -133,7 +137,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	return strings.Join(results, " "), nil
 }
 
-// SelectJoinedRaw 元々のクエリで分解されてしまっているものは元の形を採用する
+// SelectJoinedRaw 元のクエリでトークン分解されてしまっているものがある場合、元の形を採用する
 func SelectJoinedRaw(raw []string, converted []string) []string {
 	result := make([]string, 0)
 	addedmap := make(map[string]struct{})
