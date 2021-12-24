@@ -1,6 +1,6 @@
 # qclean
 
-qclean lets you to clean up search query in japanese.
+qclean lets you to clean up search query in japanese. This is mainly used to remove wasted space.
 
 ## Quick Start
 
