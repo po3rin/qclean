@@ -27,6 +27,14 @@ func TestCleanSimple(t *testing.T) {
 			input: "苔 癬 治っ た",
 			want:  "苔癬 治った",
 		},
+		{
+			input: "がん　を　直す　方法",
+			want:  "がんを直す 方法",
+		},
+		{
+			input: "心房 細 動 と は",
+			want:  "心房細動とは",
+		},
 	}
 
 	c, err := qclean.NewCleaner()

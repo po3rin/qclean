@@ -11,6 +11,8 @@ import (
 	"github.com/y-bash/go-gaga"
 )
 
+var Dict = ipa.Dict()
+
 type Cleaner struct {
 	tknz        *tokenizer.Tokenizer
 	norm        *gaga.Normalizer
@@ -19,7 +21,7 @@ type Cleaner struct {
 
 // NewCleaner ユーザー辞書を使わずに初期化する
 func NewCleaner() (*Cleaner, error) {
-	tknz, err := tokenizer.New(ipa.Dict(), tokenizer.OmitBosEos())
+	tknz, err := tokenizer.New(Dict, tokenizer.OmitBosEos())
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +78,15 @@ func (c *Cleaner) ApplyReplae(txt string) string {
 }
 
 func (c *Cleaner) Clean(txt string) (string, error) {
+	txt = strings.ReplaceAll(txt, "　", " ")
+	txt = strings.ReplaceAll(txt, "\n", "")
+
 	rawSplit := strings.Split(txt, " ")
 	if len(rawSplit) == 0 {
 		return txt, nil
 	}
 
 	txt = strings.ReplaceAll(txt, " ", "")
-	txt = strings.ReplaceAll(txt, "　", "")
 
 	txt = c.ApplyReplae(txt)
 	txt = c.Norm(txt)
@@ -135,6 +139,18 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 
 	results = SelectJoinedRaw(rawSplit, results)
 	return strings.Join(results, " "), nil
+}
+
+func (c *Cleaner) CleanAll(txts []string) ([]string, error) {
+	results := make([]string, 0, 0)
+	for _, t := range txts {
+		result, err := c.Clean(t)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
 }
 
 // SelectJoinedRaw 元のクエリでトークン分解されてしまっているものがある場合、元の形を採用する
