@@ -6,6 +6,13 @@ import (
 	"github.com/po3rin/qclean"
 )
 
+var replaceList = map[string]string{
+	"ガン":  "がん",
+	"前立線": "前立腺",
+	"４０肩": "四十肩",
+	"５０肩": "五十肩",
+}
+
 func TestCleanSimple(t *testing.T) {
 	tests := []struct {
 		input string
