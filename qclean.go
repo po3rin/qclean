@@ -70,7 +70,7 @@ func (c *Cleaner) Norm(txt string) string {
 	return txt
 }
 
-func (c *Cleaner) ApplyReplae(txt string) string {
+func (c *Cleaner) ApplyReplace(txt string) string {
 	for k, v := range c.replaceList {
 		txt = strings.ReplaceAll(txt, k, v)
 	}
@@ -81,14 +81,19 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	txt = strings.ReplaceAll(txt, "　", " ")
 	txt = strings.ReplaceAll(txt, "\n", "")
 
+	txt = c.ApplyReplace(txt)
+	txt = c.Norm(txt)
+
 	rawSplit := strings.Split(txt, " ")
 	if len(rawSplit) == 0 {
 		return txt, nil
 	}
 
-	txt = strings.ReplaceAll(txt, " ", "")
+	if len(rawSplit) <= 2 {
+		return txt, nil
+	}
 
-	txt = c.ApplyReplae(txt)
+	txt = strings.ReplaceAll(txt, " ", "")
 	txt = c.Norm(txt)
 
 	tokens := c.tknz.Tokenize(txt)
@@ -99,7 +104,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	for _, t := range tokens {
 		var pos string
 		if len(t.Features()) >= 6 {
-			pos = strings.Join(t.Features()[:6], ",")
+			pos = strings.Join(t.Features()[:7], ",")
 		} else {
 			pos = strings.Join(t.Features()[:len(t.Features())], ",")
 		}
@@ -109,11 +114,17 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 				strings.Contains(pos, "助詞,連体化") ||
 				strings.Contains(pos, "助詞,格助詞") ||
 				strings.Contains(pos, "助詞,接続助詞") ||
+				strings.Contains(pos, "助詞,副助詞") ||
+				strings.Contains(pos, "助詞,並立助詞") ||
+				strings.Contains(pos, "助詞,係助詞") ||
+				strings.Contains(pos, "助詞,副詞化") ||
+				strings.Contains(pos, "名詞,非自立,一般,*,*,*,の") ||
 				strings.Contains(pos, "動詞,自立,*,*,サ変・スル,未然形")) {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			next_join = true
 			continue
 		}
+
 		if len(results) > 0 && next_join {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			next_join = false
@@ -121,19 +132,30 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 		}
 
 		if len(results) > 0 &&
-			(strings.Contains(pos, "名詞,接尾") ||
-				strings.Contains(pos, "詞,自立,*,*,五段・ラ行,基本形") ||
-				strings.Contains(pos, "助動詞,*,*,*,特殊")) {
+			(strings.Contains(pos, "名詞,接尾,助数詞") ||
+				// strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用タ接続") ||
+				strings.Contains(pos, "名詞,接尾,特殊,*,*,*") ||
+				strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,基本形") ||
+				strings.Contains(pos, "形容詞,非自立") ||
+				strings.Contains(pos, "助動詞,*,*,*,特殊") ||
+				strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用形") ||
+
+				// Special case ...
+				// There may be a problem in this case.
+				strings.Contains(pos, "名詞,接尾,一般,*,*,*,児") ||
+				strings.Contains(pos, "カスタム接尾")) {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			continue
 		}
 
-		if strings.Contains(pos, "接頭詞") || t.Surface == "-" {
+		if strings.Contains(pos, "接頭詞") || t.Surface == "-" || strings.Contains(pos, "形容詞,非自立,*,*,形容詞・アウオ段,連用テ接続") {
 			prefix_pool = t.Surface
 			continue
 		}
 
 		results = append(results, prefix_pool+t.Surface)
+
+		// reset
 		prefix_pool = ""
 	}
 
@@ -155,30 +177,20 @@ func (c *Cleaner) CleanAll(txts []string) ([]string, error) {
 
 // SelectJoinedRaw 元のクエリでトークン分解されてしまっているものがある場合、元の形を採用する
 func SelectJoinedRaw(raw []string, converted []string) []string {
-	result := make([]string, 0)
-	addedmap := make(map[string]struct{})
-
-	for _, c := range converted {
-		var checkcnt int
-		for _, r := range raw {
-			if strings.Contains(r, c) {
-				if _, ok := addedmap[r]; ok {
-					break
-				}
-				addedmap[r] = struct{}{}
-				result = append(result, r)
-				break
-			}
-			checkcnt++
-		}
-		if checkcnt == len(raw) {
-			if _, ok := addedmap[c]; ok {
-				continue
-			}
-			addedmap[c] = struct{}{}
-			result = append(result, c)
-		}
-
+	rawMap := make(map[string]struct{}, len(raw))
+	for _, r := range raw {
+		rawMap[r] = struct{}{}
 	}
-	return result
+
+	for i := 0; i < len(converted)-1; i++ {
+		compare := converted[i] + converted[i+1]
+		_, ok := rawMap[compare]
+		if !ok {
+			continue
+		}
+		converted = append(converted[:i], converted[i+1:]...)
+		converted[i] = compare
+		i++
+	}
+	return converted
 }
