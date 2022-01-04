@@ -1,7 +1,6 @@
 package qclean
 
 import (
-	"fmt"
 	"strings"
 
 	ipa "github.com/ikawaha/kagome-dict-ipa-neologd"
@@ -110,8 +109,6 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 			pos = strings.Join(t.Features()[:len(t.Features())], ",")
 		}
 
-		fmt.Println(t.Features())
-
 		if len(results) > 0 &&
 			(strings.Contains(pos, "副詞,助詞類接続") ||
 				strings.Contains(pos, "助詞,連体化") ||
@@ -162,7 +159,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 		prefix_pool = ""
 	}
 
-	// results = SelectJoinedRaw(rawSplit, results)
+	results = SelectJoinedRaw(rawSplit, results)
 	return strings.Join(results, " "), nil
 }
 
@@ -180,30 +177,20 @@ func (c *Cleaner) CleanAll(txts []string) ([]string, error) {
 
 // SelectJoinedRaw 元のクエリでトークン分解されてしまっているものがある場合、元の形を採用する
 func SelectJoinedRaw(raw []string, converted []string) []string {
-	result := make([]string, 0)
-	addedmap := make(map[string]struct{})
-
-	for _, c := range converted {
-		var checkcnt int
-		for _, r := range raw {
-			if strings.Contains(r, c) {
-				if _, ok := addedmap[r]; ok {
-					break
-				}
-				addedmap[r] = struct{}{}
-				result = append(result, r)
-				break
-			}
-			checkcnt++
-		}
-		if checkcnt == len(raw) {
-			if _, ok := addedmap[c]; ok {
-				continue
-			}
-			addedmap[c] = struct{}{}
-			result = append(result, c)
-		}
-
+	rawMap := make(map[string]struct{}, len(raw))
+	for _, r := range raw {
+		rawMap[r] = struct{}{}
 	}
-	return result
+
+	for i := 0; i < len(converted)-1; i++ {
+		compare := converted[i] + converted[i+1]
+		_, ok := rawMap[compare]
+		if !ok {
+			continue
+		}
+		converted = append(converted[:i], converted[i+1:]...)
+		converted[i] = compare
+		i++
+	}
+	return converted
 }
