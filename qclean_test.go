@@ -70,6 +70,22 @@ func TestCleanSimple(t *testing.T) {
 			input: "苔 癬 治っ た",
 			want:  "苔癬 治った",
 		},
+		{
+			input: "筋 筋 膜 性 疼痛",
+			want:  "筋筋膜性 疼痛",
+		},
+		{
+			input: "筋 筋 膜 痛 による 歯痛",
+			want:  "筋筋膜痛による歯痛",
+		},
+		{
+			input: "筋 筋 膜性 疼痛 完治",
+			want:  "筋筋膜性 疼痛 完治",
+		},
+		{
+			input: "筋肉 筋 痛い",
+			want:  "筋肉 筋 痛い",
+		},
 	}
 
 	c, err := qclean.NewCleanerWithUserDict("testdata/userdict_test.txt")

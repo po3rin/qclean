@@ -149,7 +149,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 		prefix_pool = ""
 	}
 
-	results = SelectJoinedRaw(rawSplit, results)
+	// results = SelectJoinedRaw(rawSplit, results)
 	return strings.Join(results, " "), nil
 }
 
