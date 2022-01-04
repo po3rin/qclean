@@ -1,6 +1,7 @@
 package qclean
 
 import (
+	"fmt"
 	"strings"
 
 	ipa "github.com/ikawaha/kagome-dict-ipa-neologd"
@@ -94,6 +95,8 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	}
 
 	txt = strings.ReplaceAll(txt, " ", "")
+	txt = c.Norm(txt)
+
 	tokens := c.tknz.Tokenize(txt)
 
 	var prefix_pool string
@@ -107,7 +110,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 			pos = strings.Join(t.Features()[:len(t.Features())], ",")
 		}
 
-		// fmt.Println(t.Features())
+		fmt.Println(t.Features())
 
 		if len(results) > 0 &&
 			(strings.Contains(pos, "副詞,助詞類接続") ||
@@ -117,6 +120,8 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 				strings.Contains(pos, "助詞,副助詞") ||
 				strings.Contains(pos, "助詞,並立助詞") ||
 				strings.Contains(pos, "助詞,係助詞") ||
+				strings.Contains(pos, "助詞,副詞化") ||
+				strings.Contains(pos, "名詞,非自立,一般,*,*,*,の") ||
 				strings.Contains(pos, "動詞,自立,*,*,サ変・スル,未然形")) {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			next_join = true
@@ -132,6 +137,8 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 		if len(results) > 0 &&
 			(strings.Contains(pos, "名詞,接尾,助数詞") ||
 				// strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用タ接続") ||
+				strings.Contains(pos, "名詞,接尾,特殊,*,*,*") ||
+				strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,基本形") ||
 				strings.Contains(pos, "形容詞,非自立") ||
 				strings.Contains(pos, "助動詞,*,*,*,特殊") ||
 				strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用形") ||
@@ -150,6 +157,8 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 		}
 
 		results = append(results, prefix_pool+t.Surface)
+
+		// reset
 		prefix_pool = ""
 	}
 
