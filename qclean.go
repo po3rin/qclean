@@ -1,7 +1,6 @@
 package qclean
 
 import (
-	"fmt"
 	"strings"
 
 	ipa "github.com/ikawaha/kagome-dict-ipa-neologd"
