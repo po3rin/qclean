@@ -101,7 +101,6 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	var next_join bool
 	var results []string
 	for _, t := range tokens {
-		fmt.Printf("%v:%v\n", t.Surface, t.Features())
 		var pos string
 		if len(t.Features()) >= 6 {
 			pos = strings.Join(t.Features()[:7], ",")
@@ -171,9 +170,6 @@ func (c *Cleaner) CleanAll(txts []string) ([]string, error) {
 func SelectJoinedRaw(raw []string, converted []string) []string {
 	result := make([]string, 0)
 	addedmap := make(map[string]struct{})
-
-	fmt.Println(raw)
-	fmt.Println(converted)
 
 	for _, c := range converted {
 		var checkcnt int
