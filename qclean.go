@@ -107,6 +107,8 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 			pos = strings.Join(t.Features()[:len(t.Features())], ",")
 		}
 
+		// fmt.Println(t.Features())
+
 		if len(results) > 0 &&
 			(strings.Contains(pos, "副詞,助詞類接続") ||
 				strings.Contains(pos, "助詞,連体化") ||
@@ -120,6 +122,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 			next_join = true
 			continue
 		}
+
 		if len(results) > 0 && next_join {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			next_join = false
@@ -131,6 +134,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 				// strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用タ接続") ||
 				strings.Contains(pos, "形容詞,非自立") ||
 				strings.Contains(pos, "助動詞,*,*,*,特殊") ||
+				strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用形") ||
 
 				// Special case ...
 				// There may be a problem in this case.
@@ -140,7 +144,7 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 			continue
 		}
 
-		if strings.Contains(pos, "接頭詞") || t.Surface == "-" {
+		if strings.Contains(pos, "接頭詞") || t.Surface == "-" || strings.Contains(pos, "形容詞,非自立,*,*,形容詞・アウオ段,連用テ接続") {
 			prefix_pool = t.Surface
 			continue
 		}

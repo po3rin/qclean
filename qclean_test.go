@@ -86,6 +86,15 @@ func TestCleanSimple(t *testing.T) {
 			input: "筋肉 筋 痛い",
 			want:  "筋肉 筋 痛い",
 		},
+		{
+			input: "おしっこ 回数 減った",
+			want:  "おしっこ 回数 減った",
+		},
+		// FUTURE WORKS
+		// {
+		// 	input: "お腹 が 痛く なり よく 下痢 を する",
+		// 	want:  "お腹が痛くなりよく下痢をする",
+		// },
 	}
 
 	c, err := qclean.NewCleanerWithUserDict("testdata/userdict_test.txt")
