@@ -1,6 +1,7 @@
 package qclean
 
 import (
+	"fmt"
 	"strings"
 
 	ipa "github.com/ikawaha/kagome-dict-ipa-neologd"
@@ -70,7 +71,7 @@ func (c *Cleaner) Norm(txt string) string {
 	return txt
 }
 
-func (c *Cleaner) ApplyReplae(txt string) string {
+func (c *Cleaner) ApplyReplace(txt string) string {
 	for k, v := range c.replaceList {
 		txt = strings.ReplaceAll(txt, k, v)
 	}
@@ -81,25 +82,29 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 	txt = strings.ReplaceAll(txt, "　", " ")
 	txt = strings.ReplaceAll(txt, "\n", "")
 
+	txt = c.ApplyReplace(txt)
+	txt = c.Norm(txt)
+
 	rawSplit := strings.Split(txt, " ")
 	if len(rawSplit) == 0 {
 		return txt, nil
 	}
 
+	if len(rawSplit) <= 2 {
+		return txt, nil
+	}
+
 	txt = strings.ReplaceAll(txt, " ", "")
-
-	txt = c.ApplyReplae(txt)
-	txt = c.Norm(txt)
-
 	tokens := c.tknz.Tokenize(txt)
 
 	var prefix_pool string
 	var next_join bool
 	var results []string
 	for _, t := range tokens {
+		fmt.Printf("%v:%v\n", t.Surface, t.Features())
 		var pos string
 		if len(t.Features()) >= 6 {
-			pos = strings.Join(t.Features()[:6], ",")
+			pos = strings.Join(t.Features()[:7], ",")
 		} else {
 			pos = strings.Join(t.Features()[:len(t.Features())], ",")
 		}
@@ -109,6 +114,9 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 				strings.Contains(pos, "助詞,連体化") ||
 				strings.Contains(pos, "助詞,格助詞") ||
 				strings.Contains(pos, "助詞,接続助詞") ||
+				strings.Contains(pos, "助詞,副助詞") ||
+				strings.Contains(pos, "助詞,並立助詞") ||
+				strings.Contains(pos, "助詞,係助詞") ||
 				strings.Contains(pos, "動詞,自立,*,*,サ変・スル,未然形")) {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			next_join = true
@@ -121,9 +129,15 @@ func (c *Cleaner) Clean(txt string) (string, error) {
 		}
 
 		if len(results) > 0 &&
-			(strings.Contains(pos, "名詞,接尾") ||
-				strings.Contains(pos, "詞,自立,*,*,五段・ラ行,基本形") ||
-				strings.Contains(pos, "助動詞,*,*,*,特殊")) {
+			(strings.Contains(pos, "名詞,接尾,助数詞") ||
+				// strings.Contains(pos, "動詞,自立,*,*,五段・ラ行,連用タ接続") ||
+				strings.Contains(pos, "形容詞,非自立") ||
+				strings.Contains(pos, "助動詞,*,*,*,特殊") ||
+
+				// Special case ...
+				// There may be a problem in this case.
+				strings.Contains(pos, "名詞,接尾,一般,*,*,*,児") ||
+				strings.Contains(pos, "カスタム接尾")) {
 			results[len(results)-1] = results[len(results)-1] + t.Surface
 			continue
 		}
@@ -157,6 +171,9 @@ func (c *Cleaner) CleanAll(txts []string) ([]string, error) {
 func SelectJoinedRaw(raw []string, converted []string) []string {
 	result := make([]string, 0)
 	addedmap := make(map[string]struct{})
+
+	fmt.Println(raw)
+	fmt.Println(converted)
 
 	for _, c := range converted {
 		var checkcnt int
